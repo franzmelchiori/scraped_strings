@@ -19,6 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import random
 import json
 
 
@@ -41,19 +42,11 @@ class StringManager:
         self.extract_aos_name()
         self.extract_id_session()
 
-    def print_aos_name(self):
-        if self.aos_scrap != '':
-            print(self.aos_scrap)
+    def __repr__(self):
+        if self.map_norm:
+            return 'AOS: {0} | ID: {1}'.format(self.aos_name, self.id_session)
         else:
-            print('no aos name')
-        return True
-
-    def print_id_session(self):
-        if self.id_scrap != '':
-            print(self.id_scrap)
-        else:
-            print('no id session')
-        return True
+            return 'AOS: {0} | ID: {1}'.format(self.aos_scrap, self.id_scrap)
 
     def store_json_customer_settings(self):
         customer_settings = {'aos_names': ['aos_1', 'aos_2'],
@@ -124,7 +117,16 @@ class StringManager:
                 self.aos_name = self.aos_scrap
                 return True
             else:
-                pass
+                aos_scrap_elements = list(''.join(self.aos_scrap.split()))
+                aos_name_likelihoods = []
+                for aos_name in aos_names:
+                    aos_name_elements = list(aos_name)
+                    aos_name_likelihood = (random.random()//0.001)/1000
+                    aos_name_likelihoods.append(aos_name_likelihood)
+                aos_likelihood_names_map = dict(zip(aos_name_likelihoods,
+                                                     aos_names))
+                self.aos_name = aos_likelihood_names_map[
+                    max(aos_name_likelihoods)]
         return False
 
     def norm_id_session(self):
@@ -139,11 +141,13 @@ class StringManager:
 
 
 def get_aos_id(scraped_string, customer_name='test', path_json='',
-               map_norm=True):
+               map_norm=True, verbose=False):
     sm = StringManager(scraped_string=scraped_string,
                        customer_name=customer_name,
                        path_json=path_json,
                        map_norm=map_norm)
+    if verbose:
+        print(sm)
     if map_norm:
         return sm.aos_name, sm.id_session
     return sm.aos_scrap, sm.id_scrap
@@ -151,10 +155,11 @@ def get_aos_id(scraped_string, customer_name='test', path_json='',
 
 if __name__ == "__main__":
 
-    scrap_example_us = "Inc. [a0s_1: Session ID - 1 2] - [1 -"
-    scrap_example_it = "S.p.A. [a0s_1: ID sessione - 1 2] - [1 -"
-    scrap_example_de = "GmbH [a0s_1: Session ID - 1 2] - [1 -"
+    scrap_example_us = "Inc. [a0 s_1: Session ID - 1 2] - [1 -"
+    scrap_example_it = "S.p.A. [a0 s_1: ID sessione - 1 2] - [1 -"
+    scrap_example_de = "GmbH [a0 s_1: Session ID - 1 2] - [1 -"
 
-    print(get_aos_id(scraped_string=scrap_example_us,
-                     customer_name='test',
-                     map_norm=True))
+    get_aos_id(scraped_string=scrap_example_us,
+               customer_name='test',
+               map_norm=True,
+               verbose=True)

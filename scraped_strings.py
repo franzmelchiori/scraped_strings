@@ -117,16 +117,7 @@ class StringManager:
                 self.aos_name = self.aos_scrap
                 return True
             else:
-                aos_scrap_elements = list(''.join(self.aos_scrap.split()))
-                aos_name_likelihoods = []
-                for aos_name in aos_names:
-                    aos_name_elements = list(aos_name)
-                    aos_name_likelihood = (random.random()//0.001)/1000
-                    aos_name_likelihoods.append(aos_name_likelihood)
-                aos_likelihood_names_map = dict(zip(aos_name_likelihoods,
-                                                     aos_names))
-                self.aos_name = aos_likelihood_names_map[
-                    max(aos_name_likelihoods)]
+                pass
         return False
 
     def norm_id_session(self):

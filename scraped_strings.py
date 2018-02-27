@@ -19,8 +19,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import random
 import json
+import re
 
 
 class StringManager:
@@ -38,7 +38,12 @@ class StringManager:
         if customer_name == 'test':
             self.store_json_customer_settings()
         self.load_json_customer_settings(self.path_json)
+        if 'aos_names' in self.customer_settings:
+            self.aos_names = self.customer_settings['aos_names']
         self.map_norm = map_norm
+        if self.map_norm:
+            self.aos_patterns = {}
+            self.generate_aos_pattern()
         self.extract_aos_name()
         self.extract_id_session()
 
@@ -49,7 +54,10 @@ class StringManager:
             return 'AOS: {0} | ID: {1}'.format(self.aos_scrap, self.id_scrap)
 
     def store_json_customer_settings(self):
-        customer_settings = {'aos_names': ['aos_1', 'aos_2'],
+        customer_settings = {'aos_names': ['TEST1AOS_1',
+                                           'TEST1AOS_2',
+                                           'TEST2AOS_1',
+                                           'TEST2AOS_2'],
                              'ax_title_marks': {'aos_start': 'Inc. [',
                                                 'aos_stop': ': Session',
                                                 'id_start': 'ID - ',
@@ -110,14 +118,75 @@ class StringManager:
                 return True
         return False
 
+    def generate_aos_pattern(self):
+        if self.aos_names:
+            for aos_name in self.aos_names:
+                aos_name_proc = ''.join(aos_name.lower().split())
+                aos_root = aos_name_proc.rstrip(''.join(
+                    [str(x) for x in range(10)]))
+                aos_serial = aos_name_proc.split(aos_root, 1)[1]
+                aos_pattern = '('
+                for aos_char in aos_root:
+                    if aos_char == 'b':
+                        aos_pattern += '[b68]'
+                    elif aos_char == 'b':
+                        aos_pattern += '[b68]'
+                    elif aos_char == 'd':
+                        aos_pattern += '[d6o0]'
+                    elif aos_char == 'e':
+                        aos_pattern += '[e3]'
+                    elif aos_char == 'f':
+                        aos_pattern += '[f17]'
+                    elif aos_char == 'h':
+                        aos_pattern += '[hb6]'
+                    elif aos_char == 'i':
+                        aos_pattern += '[i1l]'
+                    elif aos_char == 'l':
+                        aos_pattern += '[li1]'
+                    elif aos_char == 'o':
+                        aos_pattern += '[o0]'
+                    elif aos_char == 't':
+                        aos_pattern += '[tfl1]'
+                    elif aos_char == '0':
+                        aos_pattern += '[0do]'
+                    elif aos_char == '1':
+                        aos_pattern += '[1filt]'
+                    elif aos_char == '3':
+                        aos_pattern += '[3e]'
+                    elif aos_char == '6':
+                        aos_pattern += '[6bdh]'
+                    elif aos_char == '7':
+                        aos_pattern += '[7ft]'
+                    elif aos_char == '8':
+                        aos_pattern += '[8b]'
+                    else:
+                        aos_pattern += aos_char
+                aos_pattern += ')'
+                if aos_pattern in self.aos_patterns:
+                    self.aos_patterns[aos_pattern][aos_serial] = aos_name
+                else:
+                    self.aos_patterns[aos_pattern] = {aos_serial: aos_name}
+            return True
+        return False
+
     def map_aos_scrap(self):
-        if 'aos_names' in self.customer_settings:
-            aos_names = self.customer_settings['aos_names']
-            if self.aos_scrap in aos_names:
+        if self.aos_names:
+            if self.aos_scrap in self.aos_names:
                 self.aos_name = self.aos_scrap
                 return True
             else:
-                pass
+                aos_scrap_name = ''.join(self.aos_scrap.lower().split())
+                aos_scrap_root = self.aos_scrap.rstrip(''.join(
+                    [str(x) for x in range(10)]))
+                aos_scrap_serial = self.aos_scrap.split(aos_scrap_root, 1)[1]
+                for aos_pattern in self.aos_patterns.keys():
+                    if re.match(aos_pattern, aos_scrap_name):
+                        try:
+                            self.aos_name = self.aos_patterns[
+                                aos_pattern][aos_scrap_serial]
+                            return True
+                        except KeyError:
+                            return False
         return False
 
     def norm_id_session(self):
@@ -146,9 +215,9 @@ def get_aos_id(scraped_string, customer_name='test', path_json='',
 
 if __name__ == "__main__":
 
-    scrap_example_us = "Inc. [a0 s_1: Session ID - 1 2] - [1 -"
-    scrap_example_it = "S.p.A. [a0 s_1: ID sessione - 1 2] - [1 -"
-    scrap_example_de = "GmbH [a0 s_1: Session ID - 1 2] - [1 -"
+    scrap_example_us = "Inc. [t3stl a0 s_1: Session ID - 1 2] - [1 -"
+    scrap_example_it = "S.p.A. [t3stl a0 s_1: ID sessione - 1 2] - [1 -"
+    scrap_example_de = "GmbH [t3stl a0 s_1: Session ID - 1 2] - [1 -"
 
     get_aos_id(scraped_string=scrap_example_us,
                customer_name='test',

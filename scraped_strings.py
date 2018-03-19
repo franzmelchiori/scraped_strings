@@ -203,12 +203,12 @@ class StringManager:
 
 class CalendarWatchManager:
 
-    def __init__(self, scraped_string, date_format='dd/mm/yyyy',
-                 time_format='hh:mm:ss'):
+    def __init__(self, scraped_string='', date_format='dd/mm/yyyy',
+                 time_format='hh:mm:ss', proximity_minutes=60):
         self.scraped_string = scraped_string
-        self.today = datetime.datetime.today()
         self.date_format = date_format
         self.time_format = time_format
+        self.proximity_minutes = proximity_minutes
         self.months = {1:  ['jan', 31],
                        2:  ['feb', 28],
                        3:  ['mar', 31],
@@ -221,12 +221,13 @@ class CalendarWatchManager:
                        10: ['oct', 31],
                        11: ['nov', 30],
                        12: ['dec', 31]}
-        self.three_letter_previous_month = ''
-        self.days_previous_month = ''
-        self.date_to_consider_begin = ''
-        self.date_to_consider_end = ''
+        self.today = datetime.datetime.today()
+        self.three_letter_previous_month = None
+        self.days_previous_month = None
+        self.date_to_consider_begin = None
+        self.date_to_consider_end = None
         self.dhms_time_days = None
-        self.hms_time = ''
+        self.hms_time = None
 
     def __repr__(self):
         print_message = ''
@@ -317,7 +318,7 @@ class CalendarWatchManager:
                 return True
         return False
 
-    def check_hms_time_proximity(self, proximity_minutes=60):
+    def check_hms_time_proximity(self):
         self.get_timestamp_now()
         hms_now = self.get_timestamp_now().split(':')
         self.detect_hms_time()
@@ -328,7 +329,7 @@ class CalendarWatchManager:
             t1 = datetime.timedelta(hours=int(hms_scrap[0]),
                                     minutes=int(hms_scrap[1]))
             td = abs((t2-t1).total_seconds()/60)
-            if td <= proximity_minutes:
+            if td <= self.proximity_minutes:
                 return True
         return False
 
@@ -346,13 +347,33 @@ def get_aos_id(scraped_string, customer_name='test', path_json='',
     return sm.aos_scrap, sm.id_scrap
 
 
+def get_date_today():
+    cwm = CalendarWatchManager()
+    return cwm.get_date_today()
+
+
+def get_three_letter_days_previous_month():
+    cwm = CalendarWatchManager()
+    return cwm.get_three_letter_days_previous_month()
+
+
+def check_dhms_totaltime_days_previous_month(scraped_string):
+    cwm = CalendarWatchManager(scraped_string=scraped_string)
+    return cwm.check_dhms_totaltime_days_previous_month()
+
+
+def check_hms_time_proximity(scraped_string, proximity_minutes=60):
+    cwm = CalendarWatchManager(scraped_string=scraped_string,
+                               proximity_minutes=proximity_minutes)
+    return cwm.check_hms_time_proximity()
+
+
 if __name__ == "__main__":
 
     if True:
         scrap_example_us = "Inc. [t3stl a0 s_1: Session ID - 1 2] - [1 -"
         scrap_example_it = "S.p.A. [t3stl a0 s_1: ID sessione - 1 2] - [1 -"
         scrap_example_de = "GmbH [t3stl a0 s_1: Session ID - 1 2] - [1 -"
-
         get_aos_id(scraped_string=scrap_example_us,
                    customer_name='test',
                    map_norm=True,
@@ -364,3 +385,19 @@ if __name__ == "__main__":
         scraped_hms_time_sample = '\nbla\nbla10:00:00bla\nbla20:00:00bla\nbla'
         cwm = CalendarWatchManager(scraped_hms_time_sample)
         print(cwm)
+        print('')
+
+    if True:
+        print('get_date_today(): {0}'.format(
+            get_date_today()))
+        print('get_three_letter_days_previous_month(): {0}'.format(
+            get_three_letter_days_previous_month()))
+        scraped_string = '28d 7h 7m 46s'
+        print('check_dhms_totaltime_days_previous_month({0}): {1}'.format(
+            scraped_string,
+            check_dhms_totaltime_days_previous_month(scraped_string)))
+        scraped_string = 'bla11:30:00bla'
+        print('check_hms_time_proximity({0}): {1}'.format(
+            scraped_string,
+            check_hms_time_proximity(scraped_string)))
+        print('')

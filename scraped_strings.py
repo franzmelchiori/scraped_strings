@@ -347,6 +347,21 @@ def get_aos_id(scraped_string, customer_name='test', path_json='',
     return sm.aos_scrap, sm.id_scrap
 
 
+def check_number(scraped_string,
+                 comparison_type='bigger',
+                 comparison_number=0):
+    splitted_scrap = scraped_string.split()
+    for snippet in splitted_scrap:
+        try:
+            candidate_number = float(snippet)
+        except ValueError:
+            continue
+        if comparison_type == 'bigger':
+            if candidate_number > comparison_number:
+                return True
+    return False
+
+
 def get_date_today(date_format='dd/mm/yyyy'):
     cwm = CalendarWatchManager(date_format=date_format)
     return cwm.get_date_today()
@@ -370,7 +385,7 @@ def check_hms_time_proximity(scraped_string, proximity_minutes=60):
 
 if __name__ == "__main__":
 
-    if True:
+    if False:
         scrap_example_us = "Inc. [t3stl a0 s_1: Session ID - 1 2] - [1 -"
         scrap_example_it = "S.p.A. [t3stl a0 s_1: ID sessione - 1 2] - [1 -"
         scrap_example_de = "GmbH [t3stl a0 s_1: Session ID - 1 2] - [1 -"
@@ -380,14 +395,14 @@ if __name__ == "__main__":
                    verbose=True)
         print('')
 
-    if True:
+    if False:
         scraped_dhms_time_sample = '28d 7h 7m 46s'
         scraped_hms_time_sample = '\nbla\nbla10:00:00bla\nbla20:00:00bla\nbla'
         cwm = CalendarWatchManager(scraped_hms_time_sample)
         print(cwm)
         print('')
 
-    if True:
+    if False:
         date_format = 'dd/mm/yyyy'
         print('get_date_today({0}): {1}'.format(
             date_format, get_date_today(date_format)))
@@ -405,3 +420,8 @@ if __name__ == "__main__":
             scraped_string,
             check_hms_time_proximity(scraped_string)))
         print('')
+
+    if True:
+        scraped_string = 'bla 0.1 bla'
+        print('check_number({0}): {1}'.format(
+            scraped_string, check_number(scraped_string)))

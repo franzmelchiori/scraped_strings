@@ -384,6 +384,8 @@ def check_number(scraped_string,
             if comparison_type == 'bigger':
                 if candidate_number > float(comparison_number):
                     return True, candidate_number
+                else:
+                    return False, candidate_number
     return False, None
 
 
@@ -446,7 +448,7 @@ def main():
         print('')
 
     if True:
-        scraped_string = '236.4/5 142.0/5 79.9/5 10.6/5 3.9/5 J'
+        scraped_string = '!@#bla!@#-236.4/5 142.0/5 3.9/5 J!@#bla!@#'
         print('check_number({0}): {1}'.format(
             scraped_string, check_number(scraped_string=scraped_string,
                                          comparison_type='bigger',

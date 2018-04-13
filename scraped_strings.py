@@ -411,24 +411,24 @@ def check_hms_time_proximity(scraped_string, proximity_minutes=60):
 
 
 def main():
-    if False:
+    if True:
         scrap_example_us = "Inc. [t3stl a0 5_123: Session ID - 1 2] - [1 -"
-        scrap_example_it = "S.p.A. [t3stl a0 5_123: ID sessione - 1 2] - [1 -"
-        scrap_example_de = "GmbH [t3stl a0 5_123: Session ID - 1 2] - [1 -"
+        # scrap_example_it = "S.p.A. [t3stl a0 5_123: ID sessione - 1 2] - [1 -"
+        # scrap_example_de = "GmbH [t3stl a0 5_123: Session ID - 1 2] - [1 -"
         get_aos_id(scraped_string=scrap_example_us,
                    customer_name='test',
                    map_norm=True,
                    verbose=True)
         print('')
 
-    if False:
+    if True:
         scraped_dhms_time_sample = '30d 23h 0m 00s'
-        scraped_hms_time_sample = '\nbla\nbla10:00:00bla\nbla20:00:00bla\nbla'
+        # scraped_hms_time_sample = '\nbla\nbla10:00:00bla\nbla20:00:00bla\nbla'
         cwm = CalendarWatchManager(scraped_dhms_time_sample)
         print(cwm)
         print('')
 
-    if False:
+    if True:
         date_format = 'dd/mm/yyyy'
         print('get_date_today({0}): {1}'.format(
             date_format, get_date_today(date_format)))

@@ -31,8 +31,8 @@ class StringManager:
         self.scraped_string = str(scraped_string)
         self.aos_scrap = 'no_aos_scrap'
         self.id_scrap = 'no_id_scrap'
-        self.aos_name = 'no_aos_name'
-        self.id_session = 'no_id_session'
+        self.aos_name = -1
+        self.id_session = -1
         self.customer_name = str(customer_name)
         self.path_json = str(path_json)
         self.customer_settings = {}

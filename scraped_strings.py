@@ -67,10 +67,12 @@ class JSONManager:
             try:
                 value_json = dict_json[name_key_json]
             except KeyError:
-                return "'{0}' key does not exists in '{1}' dictionary".format(
-                    name_key_json, name_dict_json)
+                print("'{0}' key does not exists in '{1}' dictionary".format(
+                    name_key_json, name_dict_json))
+                return False
         except KeyError:
-            return "'{0}' dictionary does not exists".format(name_dict_json)
+            print("'{0}' dictionary does not exists".format(name_dict_json))
+            return False
         return value_json
 
 

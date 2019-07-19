@@ -2,7 +2,7 @@
 
 """
     Text processing of OCR scraped strings
-    Copyright (C) 2018 Francesco Melchiori
+    Copyright (C) 2019 Francesco Melchiori
     <https://www.francescomelchiori.com/>
 
     This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,13 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program.  If not, see
+    <http://www.gnu.org/licenses/>.
 """
 
+import sys
 import os
+import argparse
 import datetime
 import json
 import re
@@ -28,6 +31,7 @@ import re
 class JSONManager:
 
     def __init__(self, path_file_json='init'):
+        self.date_format = '%Y/%m/%d %H:%M:%S'
         self.path_file_json = path_file_json
         self.norm_json_path_file()
         self.maps_json = {}
@@ -61,19 +65,83 @@ class JSONManager:
             return False
         return True
 
+    def set_json_value(self, name_dict_json, name_key_json, value_key_json):
+        if name_dict_json not in self.maps_json:
+            self.maps_json[name_dict_json] = {}
+        self.maps_json[name_dict_json][name_key_json] = value_key_json
+        json.dump(self.maps_json, fp=open(self.path_file_json, 'w'), indent=4)
+        return True
+
+    def log_json_date(self, name_dict_json):
+        date_modified_datetime = datetime.datetime.now()
+        date_modified = date_modified_datetime.strftime(self.date_format)
+        self.set_json_value(name_dict_json=name_dict_json,
+                            name_key_json='date_modified',
+                            value_key_json=date_modified)
+        return True
+
     def get_json_value(self, name_dict_json, name_key_json):
         try:
             dict_json = self.maps_json[name_dict_json]
             try:
                 value_json = dict_json[name_key_json]
             except KeyError:
-                print("'{0}' key does not exists in '{1}' dictionary".format(
-                    name_key_json, name_dict_json))
+                # print("'{0}' key does not exists in '{1}' dictionary".format(
+                #     name_key_json, name_dict_json))
                 return False
         except KeyError:
-            print("'{0}' dictionary does not exists".format(name_dict_json))
+            # print("'{0}' dictionary does not exists".format(name_dict_json))
             return False
         return value_json
+
+    def get_json_date(self, name_dict_json, datetime_format=False):
+        if name_dict_json in self.maps_json:
+            dict_json = self.maps_json[name_dict_json]
+            if 'date_modified' in dict_json:
+                date_json = dict_json['date_modified']
+                if datetime_format:
+                    date_json = datetime.datetime.strptime(date_json,
+                                                           self.date_format)
+                return date_json
+        return False
+
+    def get_json_date_delta(self, name_dict_01_json, name_dict_02_json):
+        date_01_json = self.get_json_date(name_dict_01_json,
+                                          datetime_format=True)
+        date_02_json = self.get_json_date(name_dict_02_json,
+                                          datetime_format=True)
+        if date_01_json and date_02_json:
+            date_delta_json = date_02_json-date_01_json
+            date_delta_json = int(date_delta_json.total_seconds())
+            return date_delta_json
+        return False
+
+    def compare_json_data(self, name_dict_01_json, name_key_01_json,
+                          name_dict_02_json, name_key_02_json,
+                          comparison_logic='equal', valid_delta_seconds=3600):
+        date_delta_json = self.get_json_date_delta(
+            name_dict_01_json=name_dict_01_json,
+            name_dict_02_json=name_dict_02_json)
+        if date_delta_json is not False:
+            date_delta_abs_json = abs(date_delta_json)
+            if date_delta_abs_json <= valid_delta_seconds:
+                value_key_01_json = self.get_json_value(name_dict_01_json,
+                                                        name_key_01_json)
+                value_key_02_json = self.get_json_value(name_dict_02_json,
+                                                        name_key_02_json)
+                if not (value_key_01_json and value_key_02_json):
+                    return False, 'WARNING', 'Some data are missing..',\
+                                  "'compare_json_data'=1;1;2;;"
+                if comparison_logic == 'equal':
+                    if value_key_01_json == value_key_02_json:
+                        return True, 'OK', 'Data values are equal.',\
+                                     "'compare_json_data'=0;1;2;;"
+                    return False, 'CRITICAL', 'Data values are different!',\
+                                  "'compare_json_data'=2;1;2;;"
+            return False, 'WARNING', 'Some data are no longer valid..',\
+                          "'compare_json_data'=1;1;2;;"
+        return False, 'WARNING', 'Some data are missing..',\
+                      "'compare_json_data'=1;1;2;;"
 
 
 class StringManager:
@@ -437,14 +505,70 @@ class CalendarWatchManager:
         return False, None
 
 
+def set_dictionary_value(path_file_json='init', name_dict_json='dict_01',
+                         name_key_json='key_01', value_key_json='value_01',
+                         date_json=True):
+    jm = JSONManager(path_file_json=path_file_json)
+    if date_json:
+        jm.log_json_date(name_dict_json=name_dict_json)
+    jm.set_json_value(name_dict_json=name_dict_json,
+                      name_key_json=name_key_json,
+                      value_key_json=value_key_json)
+    return True
+
+
 def get_dictionary_value(path_file_json='init', name_dict_json='dict_01',
                          name_key_json='key_01', verbose=False):
     jm = JSONManager(path_file_json=path_file_json)
     value_json = jm.get_json_value(name_dict_json=name_dict_json,
                                    name_key_json=name_key_json)
     if verbose:
-        print(value_json)
+        print("get_dictionary_value: '{0}'".format(value_json))
     return value_json
+
+
+def get_json_date(path_file_json='init', name_dict_json='dict_01',
+                  verbose=False):
+    jm = JSONManager(path_file_json=path_file_json)
+    date_json = jm.get_json_date(name_dict_json=name_dict_json)
+    if verbose:
+        print("get_json_date: '{0}'".format(date_json))
+    return date_json
+
+
+def get_json_date_delta(path_file_json='init', name_dict_01_json='dict_01',
+                        name_dict_02_json='dict_02', verbose=False):
+    jm = JSONManager(path_file_json=path_file_json)
+    date_delta_json = jm.get_json_date_delta(
+        name_dict_01_json=name_dict_01_json,
+        name_dict_02_json=name_dict_02_json)
+    if verbose:
+        print('get_json_date_delta: {0}'.format(date_delta_json))
+    return date_delta_json
+
+
+def compare_json_data(path_file_json='init', name_dict_01_json='dict_01',
+                      name_key_01_json='key_01', name_dict_02_json='dict_02',
+                      name_key_02_json='key_02', comparison_logic='equal',
+                      valid_delta_seconds=3600, verbose=False,
+                      exit_logic=False):
+    error_level = {'OK': 0,
+                   'WARNING': 1,
+                   'CRITICAL': 2,
+                   'UNKNOWN': 3}
+    jm = JSONManager(path_file_json=path_file_json)
+    comparison_data = jm.compare_json_data(
+        name_dict_01_json=name_dict_01_json, name_key_01_json=name_key_01_json,
+        name_dict_02_json=name_dict_02_json, name_key_02_json=name_key_02_json,
+        comparison_logic=comparison_logic,
+        valid_delta_seconds=valid_delta_seconds)
+    if verbose == 'nagios':
+        comparison_message = ' | '.join(comparison_data[1:])
+        comparison_exit = comparison_data[1]
+        print(comparison_message)
+    if exit_logic:
+        exit(error_level[comparison_exit])
+    return comparison_data[0]
 
 
 def get_aos_id(scraped_string, customer_name='test', path_json='',
@@ -508,74 +632,131 @@ def check_date_today(scraped_string):
 
 
 def main():
-    if True:
-        get_dictionary_value(path_file_json='init', name_dict_json='dict_01',
-                             name_key_json='key_01', verbose=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--json_path',
+                        help='set the json path of the customer settings')
+    parser.add_argument('-d1', '--first_dictionary',
+                        help='select the first dictionary from where '
+                             'getting the first value')
+    parser.add_argument('-v1', '--first_value',
+                        help='select the first value to compare')
+    parser.add_argument('-d2', '--second_dictionary',
+                        help='select the second dictionary from where '
+                             'getting the second value')
+    parser.add_argument('-v2', '--second_value',
+                        help='select the second value to compare')
+
+    cli_args = sys.argv[1:]
+    if cli_args:
+        args = parser.parse_args()
+        json_path = args.json_path \
+            if args.json_path else 'test_customer_settings'
+        first_dictionary = args.first_dictionary \
+            if args.first_dictionary else 'test_case_01_name'
+        first_value = args.first_value \
+            if args.first_value else 'test_case_transaction_name'
+        second_dictionary = args.second_dictionary \
+            if args.second_dictionary else 'test_case_02_name'
+        second_value = args.second_value \
+            if args.second_value else 'test_case_transaction_name'
+        compare_json_data(json_path, first_dictionary, first_value,
+                          second_dictionary, second_value, verbose='nagios')
+    else:
+        parser.print_help()
         print('')
 
-    if True:
-        scrap_example_us = "Inc. [t3stl a0 5_123: Session ID - 1 2] - [1 -"
-        # scrap_example_it = "S.p.A. [t3stl a0 5_123: ID sessione - 1 2] - [1 -"
-        # scrap_example_de = "GmbH [t3stl a0 5_123: Session ID - 1 2] - [1 -"
-        get_aos_id(scraped_string=scrap_example_us,
-                   customer_name='test',
-                   map_norm=True,
-                   verbose=True)
-        print('')
+        print('Unit test:')
+        if True:
+            set_dictionary_value('test_customer_settings', 'test_case_01_name',
+                                 'test_case_transaction_name', 1)
+            set_dictionary_value('test_customer_settings', 'test_case_02_name',
+                                 'test_case_transaction_name', 1)
+            print('')
 
-    if True:
-        scraped_dhms_time_sample = '30d 23h 0m 00s'
-        # scraped_hms_time_sample = '\nbla\nbla10:00:00bla\nbla20:00:00bla\nbla'
-        cwm = CalendarWatchManager(scraped_dhms_time_sample)
-        print(cwm)
-        print('')
+        if True:
+            get_dictionary_value(path_file_json='init',
+                                 name_dict_json='dict_01',
+                                 name_key_json='key_01', verbose=True)
+            print('')
 
-    if True:
-        date_format = 'dd/mm/yyyy'
-        print('get_date_today({0}): {1}'.format(
-            date_format, get_date_today(date_format)))
-        date_format = 'mm/dd'
-        print('get_date_today({0}): {1}'.format(
-            date_format, get_date_today(date_format)))
-        print('get_three_letter_days_previous_month(): {0}'.format(
-            get_three_letter_days_previous_month()))
-        scraped_string = '30d 23h 0m 00s'
-        print('check_dhms_totaltime_days_previous_month({0}): {1}'.format(
-            scraped_string,
-            check_dhms_totaltime_days_previous_month(scraped_string)))
-        scraped_string = 'bla11:30:00bla'
-        print('check_hms_time_proximity({0}): {1}'.format(
-            scraped_string,
-            check_hms_time_proximity(scraped_string)))
-        scraped_string = 'Logs of date: 13 / 04 / 2018 (Files: 10)'
-        print('check_date_today({0}): {1}'.format(
-            scraped_string,
-            check_date_today(scraped_string)))
-        scraped_string = 'Logs of date: 13 / 04 (Files: 10)'
-        print('check_date_today({0}): {1}'.format(
-            scraped_string,
-            check_date_today(scraped_string)))
-        scraped_string = 'Logs of date: 04 / 13 / 2018 (Files: 10)'
-        print('check_date_today({0}): {1}'.format(
-            scraped_string,
-            check_date_today(scraped_string)))
-        scraped_string = 'Logs of date: 04 / 13 (Files: 10)'
-        print('check_date_today({0}): {1}'.format(
-            scraped_string,
-            check_date_today(scraped_string)))
-        scraped_string = '04l1312:02:30 N/A Success Audit'
-        print('check_date_today({0}): {1}'.format(
-            scraped_string,
-            check_date_today(scraped_string)))
-        print('')
+        if True:
+            get_json_date('test_customer_settings', 'test_case_01_name',
+                          verbose=True)
+            get_json_date('test_customer_settings', 'test_case_02_name',
+                          verbose=True)
+            get_json_date_delta('test_customer_settings', 'test_case_01_name',
+                                'test_case_02_name', verbose=True)
+            print('')
 
-    if True:
-        scraped_string = '!@#bla!@#-236.4/5 142.0/5 3.9/5 J!@#bla!@#'
-        print('check_number({0}): {1}'.format(
-            scraped_string, check_number(scraped_string=scraped_string,
-                                         comparison_type='bigger',
-                                         comparison_number='0')))
+        if True:
+            compare_json_data('test_customer_settings', 'test_case_01_name',
+                              'test_case_transaction_name',
+                              'test_case_02_name',
+                              'test_case_transaction_name', verbose='nagios')
+            print('')
+
+        if True:
+            scrap_example_us = "Inc. [t3stl a0 5_123: Session ID - 1 2] - [1 -"
+            get_aos_id(scraped_string=scrap_example_us,
+                       customer_name='test_aos',
+                       map_norm=True,
+                       verbose=True)
+            print('')
+
+        if True:
+            scraped_dhms_time_sample = '30d 23h 0m 00s'
+            cwm = CalendarWatchManager(scraped_dhms_time_sample)
+            print(cwm)
+            print('')
+
+        if True:
+            date_format = 'dd/mm/yyyy'
+            print('get_date_today({0}): {1}'.format(
+                date_format, get_date_today(date_format)))
+            date_format = 'mm/dd'
+            print('get_date_today({0}): {1}'.format(
+                date_format, get_date_today(date_format)))
+            print('get_three_letter_days_previous_month(): {0}'.format(
+                get_three_letter_days_previous_month()))
+            scraped_string = '30d 23h 0m 00s'
+            print('check_dhms_totaltime_days_previous_month({0}): {1}'.format(
+                scraped_string,
+                check_dhms_totaltime_days_previous_month(scraped_string)))
+            scraped_string = 'bla11:30:00bla'
+            print('check_hms_time_proximity({0}): {1}'.format(
+                scraped_string,
+                check_hms_time_proximity(scraped_string)))
+            scraped_string = 'Logs of date: 13 / 04 / 2018 (Files: 10)'
+            print('check_date_today({0}): {1}'.format(
+                scraped_string,
+                check_date_today(scraped_string)))
+            scraped_string = 'Logs of date: 13 / 04 (Files: 10)'
+            print('check_date_today({0}): {1}'.format(
+                scraped_string,
+                check_date_today(scraped_string)))
+            scraped_string = 'Logs of date: 04 / 13 / 2018 (Files: 10)'
+            print('check_date_today({0}): {1}'.format(
+                scraped_string,
+                check_date_today(scraped_string)))
+            scraped_string = 'Logs of date: 04 / 13 (Files: 10)'
+            print('check_date_today({0}): {1}'.format(
+                scraped_string,
+                check_date_today(scraped_string)))
+            scraped_string = '04l1312:02:30 N/A Success Audit'
+            print('check_date_today({0}): {1}'.format(
+                scraped_string,
+                check_date_today(scraped_string)))
+            print('')
+
+        if True:
+            scraped_string = '!@#bla!@#-236.4/5 142.0/5 3.9/5 J!@#bla!@#'
+            print('check_number({0}): {1}'.format(
+                scraped_string, check_number(scraped_string=scraped_string,
+                                             comparison_type='bigger',
+                                             comparison_number='0')))
+            print('')
 
 
 if __name__ == "__main__":
+
     main()

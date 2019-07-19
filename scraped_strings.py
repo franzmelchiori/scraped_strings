@@ -563,7 +563,8 @@ def compare_json_data(path_file_json='init', name_dict_01_json='dict_01',
         comparison_logic=comparison_logic,
         valid_delta_seconds=valid_delta_seconds)
     if verbose == 'nagios':
-        comparison_message = ' | '.join(comparison_data[1:])
+        comparison_message = '{0}: '.format(comparison_data[1])
+        comparison_message += ' | '.join(comparison_data[2:])
         comparison_exit = comparison_data[1]
         print(comparison_message)
     if exit_logic:

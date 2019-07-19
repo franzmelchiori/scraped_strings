@@ -661,7 +661,8 @@ def main():
         second_value = args.second_value \
             if args.second_value else 'test_case_transaction_name'
         compare_json_data(json_path, first_dictionary, first_value,
-                          second_dictionary, second_value, verbose='nagios')
+                          second_dictionary, second_value, verbose='nagios',
+                          exit_logic=True)
     else:
         parser.print_help()
         print('')

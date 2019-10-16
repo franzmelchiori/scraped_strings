@@ -247,8 +247,8 @@ class StringManager:
                 aos_serial = aos_name_proc.split(aos_root, 1)[1]
                 aos_pattern = '('
                 for aos_char in aos_root:
-                    if aos_char in {'b', 'h', '6', '8'}:
-                        aos_pattern += '[bh68]'
+                    if aos_char in {'b', 'g', 'h', '6', '8'}:
+                        aos_pattern += '[bgh68]'
                     elif aos_char in {'d', 'o', '0'}:
                         aos_pattern += '[do0]'
                     elif aos_char in {'e', '3'}:

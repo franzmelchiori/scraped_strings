@@ -338,6 +338,9 @@ class CalendarWatchManager:
                        11: ['nov', 30],
                        12: ['dec', 31]}
         self.today = datetime.datetime.today()
+        self.leap_year = self.check_leap_year()
+        if self.leap_year:
+            self.months[2] = ['feb', 29]
         self.three_letter_previous_month = None
         self.days_previous_month = None
         self.date_to_consider_begin = None
@@ -375,6 +378,18 @@ class CalendarWatchManager:
         if self.date_format == 'mm/dd':
             return self.today.strftime('%m/%d')
         return False
+
+    def check_leap_year(self):
+        this_year = self.today.year
+        if this_year % 4 != 0:
+            leap_year = False
+        elif this_year % 100 != 0:
+            leap_year = True
+        elif this_year % 400 != 0:
+            leap_year = False
+        else:
+            leap_year = True
+        return leap_year
 
     def get_three_letter_days_previous_month(self):
         current_month = self.today.month
@@ -611,6 +626,11 @@ def get_date_today(date_format='dd/mm/yyyy'):
     return cwm.get_date_today()
 
 
+def check_leap_year(date_format='dd/mm/yyyy'):
+    cwm = CalendarWatchManager(date_format=date_format)
+    return cwm.leap_year
+
+
 def get_three_letter_days_previous_month():
     cwm = CalendarWatchManager()
     return cwm.get_three_letter_days_previous_month()
@@ -715,6 +735,8 @@ def main():
             date_format = 'dd/mm/yyyy'
             print('get_date_today({0}): {1}'.format(
                 date_format, get_date_today(date_format)))
+            print('check_leap_year({0}): {1}'.format(
+                get_date_today(date_format), check_leap_year(date_format)))
             date_format = 'mm/dd'
             print('get_date_today({0}): {1}'.format(
                 date_format, get_date_today(date_format)))

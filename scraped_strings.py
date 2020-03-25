@@ -2,7 +2,7 @@
 
 """
     Text processing of OCR scraped strings
-    Copyright (C) 2019 Francesco Melchiori
+    Copyright (C) 2020 Francesco Melchiori
     <https://www.francescomelchiori.com/>
 
     This program is free software: you can redistribute it and/or modify
